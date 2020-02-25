@@ -208,6 +208,9 @@ sub _modulecmd {
     # case, eval will die, with a message indicating what went wrong.
     # we want to catch this and nicely print out the error.
 
+    # $_mlstatus is a variable dumped by modulecmd without 'my'.
+    # See https://github.com/cea-hpc/modules/pull/314 for details.
+    my $_mlstatus = 0;
     eval $out;
 
     croak
