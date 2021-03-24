@@ -3,12 +3,13 @@
 # Copyright (c) 2005-2006 The Trustees of Indiana University.
 #                         All rights reserved.
 # Copyright (c) 2006-2014 Cisco Systems, Inc.  All rights reserved.
-# Copyright (c) 2009      High Performance Computing Center Stuttgart, 
+# Copyright (c) 2009      High Performance Computing Center Stuttgart,
 #                         University of Stuttgart.  All rights reserved.
+# Copyright (c) 2021      IBM Corporation.  All rights reserved.
 # $COPYRIGHT$
-# 
+#
 # Additional copyrights may follow
-# 
+#
 # $HEADER$
 #
 
@@ -26,12 +27,13 @@ our $System_config = {
     install_subdir => "installs",
     runs_data_subdir => "test_runs",
     mpi_install_subdir => "mpi-install",
-    
-    http_agents => { 
+
+    http_agents => {
         # Early versions of wget do not have the --no-check-certificate option. Provide
         # alternative wget options.
-        wget => { 
-            command => [ "wget --no-check-certificate -nv \$url", "wget -nv \$url" ], 
+        # Adding 10min Timeout, we've seen this hang for days in rare cases.
+        wget => {
+            command => [ "wget -T 1800 --no-check-certificate -nv \$url", "wget -nv \$url" ],
             auth => "--user=\$username --password=\$password",
         },
         curl => {
@@ -41,7 +43,7 @@ our $System_config = {
     },
 
     known_compiler_names => [ "gnu", "pgi", "ibm", "intel", "kai", "absoft",
-                              "pathscale", "sun", "microsoft", "none", 
+                              "pathscale", "sun", "microsoft", "none",
                               "clang", "unknown" ],
     known_resource_manager_names => [ "slurm", "tm", "loadleveler", "sge",
                                       "alps", "lsf", "none", "unknown" ],
