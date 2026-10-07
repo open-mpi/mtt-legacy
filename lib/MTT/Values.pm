@@ -36,25 +36,30 @@ use vars qw(@EXPORT);
 use base qw(Exporter);
 @EXPORT = qw(EvaluateString IniValue Value Logical ProcessEnvKeys);
 
-# Exported result values.  These values are in sync with the server --
-# do not change them without also changing the server!  ARRGH.  These
-# constants must be before the rest of the "use" statements because
-# they are used in MTT::Test::*, which are "used" below.  #@$%@#$%!
+# Exported result values.  These used to be in sync with the server, but the
+# MongoDB reporter is no longer enabled, so WARNING was added at 4.  These
+# constants must be before the rest of the "use" statements because they are
+# used in MTT::Test::*, which are "used" below.  #@$%@#$%!
 use constant {
     FAIL => 0,
     PASS => 1,
     SKIPPED => 2,
     TIMED_OUT => 3,
-    TIMED_OUT_OR_FAIL =>4,
+    WARNING => 4,
 };
+
+# Not a result state: a synthetic bucket in the same counter hashes, holding
+# the combined fail-or-timeout tally for break_threshold_timeout_and_fail.
+our $TIMEOUT_AND_FAIL = "timeout_and_fail";
 
 # Map to human-readable English labels
 our $result_messages;
 $result_messages->{MTT::Values::FAIL}      = "fail";
 $result_messages->{MTT::Values::PASS}      = "pass";
-$result_messages->{MTT::Values::TIMED_OUT} = "timeout";
 $result_messages->{MTT::Values::SKIPPED}   = "skipped";
-$result_messages->{MTT::Values::TIMED_OUT_OR_FAIL} = "timeout_and_fail";
+$result_messages->{MTT::Values::TIMED_OUT} = "timeout";
+$result_messages->{MTT::Values::WARNING}   = "warning";
+$result_messages->{$TIMEOUT_AND_FAIL}      = "timeout_and_fail";
 # current $ini and $section parameters (we use it in funclets)
 our $evaluate_string_ini;
 our $evaluate_string_section;

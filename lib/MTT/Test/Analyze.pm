@@ -30,7 +30,8 @@ sub Analyze {
 
     # Avoid double analyzing in the case a good citizen
     # directs us to analyze for correctness
-    if ($correctness->{test_result} == MTT::Values::PASS) {
+    if ($correctness->{test_result} == MTT::Values::PASS or
+        $correctness->{test_result} == MTT::Values::WARNING) {
         if ($m and ($m !~ /\bcorrectness\b/i)) {
             $performance = MTT::Module::Run("MTT::Test::Analyze::Performance::$m", 
                                     "Analyze", $correctness->{result_stdout});

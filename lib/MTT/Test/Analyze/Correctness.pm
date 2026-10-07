@@ -22,6 +22,10 @@ sub Analyze {
 
     my ($run, $mpi_details, $msg, $results) = @_;
 
+    # $run->{pass} is evaluated below and may publish a result state here, so
+    # clear the previous test's value first.
+    undef $MTT::Test::Run::analyzer_result;
+
     # Only evaluatate $pass if we didn't timeout or skip
     my $skipped = MTT::Values::EvaluateString($run->{skipped});
     my $pass = 0;
@@ -42,12 +46,14 @@ sub Analyze {
         $pass = 0;
     }
 
-    # result value: 0=fail, 1=pass, 2=skipped, 3=timed out
+    # result value: 0=fail, 1=pass, 2=skipped, 3=timed out, 4=warning
     my $result = MTT::Values::FAIL;
     if ($skipped) {
         $result = MTT::Values::SKIPPED;
     } elsif ($results->{timed_out}) {
         $result = MTT::Values::TIMED_OUT;
+    } elsif (defined($MTT::Test::Run::analyzer_result)) {
+        $result = $MTT::Test::Run::analyzer_result;
     } elsif ($pass) {
         $result = MTT::Values::PASS;
     }
@@ -82,16 +88,18 @@ sub Analyze {
     my $str;
     $str = $msg;
     if ($pass) {
-        Verbose("$str Passed\n");
-        $report->{result_message} = "Passed";
-        $want_output = $run->{save_stdout_on_pass};
+        my $warned = ($result == MTT::Values::WARNING);
+        my $outcome = $warned ? "Passed with warnings" : "Passed";
+        Verbose("$str $outcome\n");
+        $report->{result_message} = $outcome;
+        $want_output = $warned ? 1 : $run->{save_stdout_on_pass};
     } elsif ($skipped) {
         Verbose("$str Skipped\n");
         $report->{result_message} = "Skipped";
         $want_output = $run->{save_stdout_on_pass};
     } else {
         $str =~ s/^ +//;
-        if ($results->{timed_out}) {
+        if ($result == MTT::Values::TIMED_OUT) {
             Warning("$str TIMED OUT (failed)\n");
         } else {
             Warning("$str FAILED\n");
@@ -100,6 +108,8 @@ sub Analyze {
         if ($results->{timed_out}) {
             $report->{result_message} = "Failed; timeout expired (" .
                 MTT::Util::convert_time_to_human(MTT::Values::EvaluateString($run->{timeout})) . " DD:HH:MM:SS) )";
+        } elsif ($result == MTT::Values::TIMED_OUT) {
+            $report->{result_message} = "Failed; timeout detected in test output";
         } else {
             $report->{result_message} = "Failed; ";
             if (MTT::DoCommand::wifexited($results->{exit_status})) {

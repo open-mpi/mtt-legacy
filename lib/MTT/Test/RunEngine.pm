@@ -46,6 +46,14 @@ my $test_results_count;
 #same as test_results_count but global over all envokations of RunEngine
 my $test_results_count_global;
 
+# How many tests ended in the given result state across the whole MTT run.
+# client/mtt maps these onto its exit code, so a run that reports failures
+# does not look successful to SLURM.
+sub result_count {
+    my ($state) = @_;
+    return $test_results_count_global->{$state} || 0;
+}
+
 # Submit results after each run or after *all* the runs
 my $report_after_each_result = 0;
 my $report_results_count = 0;
@@ -120,7 +128,8 @@ sub RunEngine {
     $break_threshold->{MTT::Values::FAIL}      = Value($ini, $section, "break_threshold_fail");
     $break_threshold->{MTT::Values::TIMED_OUT} = Value($ini, $section, "break_threshold_timeout");
     $break_threshold->{MTT::Values::SKIPPED}   = Value($ini, $section, "break_threshold_skipped");
-    $break_threshold->{MTT::Values::TIMED_OUT_OR_FAIL} = Value($ini, "mtt", "break_threshold_timeout_and_fail");
+    $break_threshold->{MTT::Values::WARNING}   = Value($ini, $section, "break_threshold_warning");
+    $break_threshold->{$MTT::Values::TIMEOUT_AND_FAIL} = Value($ini, "mtt", "break_threshold_timeout_and_fail");
     
    	$shuffle = undef;
     _register_shuffles($ini,$section);
@@ -562,7 +571,7 @@ sub _run_one_test {
     $test_results_count_global->{$report->{test_result}}++
                 if (exists($report->{test_result}));
 
-    $test_results_count_global->{MTT::Values::TIMED_OUT_OR_FAIL}++
+    $test_results_count_global->{$MTT::Values::TIMEOUT_AND_FAIL}++
                 if (exists($report->{test_result}) && 
                     (MTT::Values::FAIL == $report->{test_result} || MTT::Values::TIMED_OUT == $report->{test_result}));
                     
@@ -570,9 +579,10 @@ sub _run_one_test {
     # If there is an after_each step, run it
     $ENV{MTT_TEST_RUN_RESULT_MESSAGE} =
         (MTT::Values::PASS == $report->{test_result} ? "passed" :
-         (MTT::Values::FAIL == $report->{test_result} ? "failed" :
-          (MTT::Values::SKIPPED == $report->{test_result} ? "skipped" :
-           (MTT::Values::TIMED_OUT == $report->{test_result} ? "timed_out" : "unknown"))));
+         (MTT::Values::WARNING == $report->{test_result} ? "warning" :
+          (MTT::Values::FAIL == $report->{test_result} ? "failed" :
+           (MTT::Values::SKIPPED == $report->{test_result} ? "skipped" :
+            (MTT::Values::TIMED_OUT == $report->{test_result} ? "timed_out" : "unknown")))));
     _run_step($mpi_details, "after_each");
     delete $ENV{MTT_TEST_RUN_RESULT_MESSAGE};
 

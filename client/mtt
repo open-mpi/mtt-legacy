@@ -664,7 +664,26 @@ foreach my $hash (@ini_list) {
 
 MTT::Hooks::on_stop();
 
-exit(0);
+# Exit code follows the shell convention (0 is success), which is the inverse
+# of MTT's own PASS=1/FAIL=0 result states.  The codes below distinguish how
+# the run went wrong; they are ordered by the analyzer's severity precedence,
+# so a timeout outranks a failure, which outranks a warning.
+my @exit_codes = ([MTT::Values::TIMED_OUT, 2, "timed out"],
+                  [MTT::Values::FAIL,      1, "failed"],
+                  [MTT::Values::WARNING,   3, "passed with warnings"]);
+
+my $exit_code = 0;
+foreach my $e (@exit_codes) {
+    my ($state, $code, $label) = @$e;
+    my $n = MTT::Test::RunEngine::result_count($state);
+    next if !$n;
+
+    Verbose("MTT: $n test(s) $label\n");
+    $exit_code = $code;
+    last;
+}
+
+exit($exit_code);
 
 ########################################################################
 # Parameter processing subroutines

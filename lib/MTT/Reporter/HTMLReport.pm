@@ -195,7 +195,8 @@ sub _summary_report
                 {
 
                     my $mpi_version = $results_hash->{mpi_version};
-                    if ($results_hash->{test_result} eq MTT::Values::PASS)
+                    if ($results_hash->{test_result} eq MTT::Values::PASS or
+                        $results_hash->{test_result} eq MTT::Values::WARNING)
                     {
                         $per_mpiver->{$mpi_version}{pass}++;
                         $total_succ++;
@@ -481,9 +482,12 @@ sub _add_to_tables
     my $strClass = "Passed";
     if ( !$include_hash->{"result_message"} and !$include_hash->{"test_result"}) {
         $strClass = "Error";
+    } elsif ($include_hash->{"result_message"} eq "Passed with warnings") {
+        $strClass = "Warning";
+    } elsif ($include_hash->{"result_message"} eq "Skipped") {
+        $strClass = "Skipped";
     } elsif ( ($include_hash->{"result_message"} ne "Success") and
-        ($include_hash->{"result_message"} ne "Passed") and
-        ($include_hash->{"result_message"} ne "Skipped")) {
+        ($include_hash->{"result_message"} ne "Passed")) {
         $strClass = "Error";
     }
 
@@ -752,6 +756,12 @@ sub get_css_template
     }
     .Error {
     font-weight:bold; color:red;
+    }
+    .Warning {
+    font-weight:bold; color:#b8860b;
+    }
+    .Skipped {
+    color:#777777;
     }
     .Failure {
     font-weight:bold; color:purple;

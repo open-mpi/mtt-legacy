@@ -287,7 +287,8 @@ sub _summary_report {
                 foreach my $results_hash (@$section_obj) {
 
                     my $mpi_version = $results_hash->{mpi_version};
-                    if ($results_hash->{test_result} eq MTT::Values::PASS) {
+                    if ($results_hash->{test_result} eq MTT::Values::PASS or
+                        $results_hash->{test_result} eq MTT::Values::WARNING) {
                         $per_mpiver->{$mpi_version}{pass}++;
                         $total_succ++;
                     } elsif ($results_hash->{test_result} eq MTT::Values::FAIL) {
